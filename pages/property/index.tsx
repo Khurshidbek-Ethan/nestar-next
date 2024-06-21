@@ -10,7 +10,12 @@ import { PropertiesInquiry } from '../../libs/types/property/property.input';
 import { Property } from '../../libs/types/property/property';
 import { serverSideTranslations } from 'next-i18next/serverSideTranslations';
 import KeyboardArrowDownRoundedIcon from '@mui/icons-material/KeyboardArrowDownRounded';
-import { Direction } from '../../libs/enums/common.enum';
+import { Direction, Message } from '../../libs/enums/common.enum';
+import { GET_PROPERTIES } from '../../apollo/user/query';
+import { useMutation, useQuery } from '@apollo/client';
+import { T } from '../../libs/types/common';
+import { LIKE_TARGET_PROPERTY } from '../../apollo/user/mutation';
+import { sweetMixinErrorAlert, sweetTopSmallSuccessAlert } from '../../libs/sweetAlert';
 
 export const getStaticProps = async ({ locale }: any) => ({
 	props: {
@@ -32,6 +37,21 @@ const PropertyList: NextPage = ({ initialInput, ...props }: any) => {
 	const [filterSortName, setFilterSortName] = useState('New');
 
 	/** APOLLO REQUESTS **/
+	const [likeTargetProperty] = useMutation(LIKE_TARGET_PROPERTY);
+	const {
+		loading: getPropertiesLoading, //-> loading jarayoni yani backend dan data olish jarayonida qanaqadur animatsiyalarni korsatishimiz mumkun.
+		data: getPropertiesData, //-> data kirib kelgandan keyin onComplete etapi ishga tushadi.
+		error: getPropertiesError, //-> data kirib kelgunga qadar qandaydur errorlar hosil bolsa errorni korsatish.
+		refetch: getPropertiesRefetch,
+	} = useQuery(GET_PROPERTIES, {
+		fetchPolicy: 'network-only', //->chashimizdsan foydalanmagan xolda togridan togri faqatgina bizi backentimizdan qabul etayotgan malumotlarni bizga taqdim etsin 
+		variables: { input: searchFilter }, //-> variable lar bu qaysi turdagi malumotlarni serverga yuborish
+		notifyOnNetworkStatusChange: true, //-> va qayta malumotlar ozgarganda update qilishda bu mantiq ishlatiladi. va bullar hammasi options ichida mujassam boladi.
+		onCompleted: (data: T) => {
+			setProperties(data?.getProperties?.list); //-> backend dan birinchi data olinganda onComplete ishga tushadi.
+			setTotal(data?.getProperties?.metaCounter[0]?.total);
+		},
+	});
 
 	/** LIFECYCLES **/
 	useEffect(() => {
@@ -43,7 +63,11 @@ const PropertyList: NextPage = ({ initialInput, ...props }: any) => {
 		setCurrentPage(searchFilter.page === undefined ? 1 : searchFilter.page);
 	}, [router]);
 
-	useEffect(() => {}, [searchFilter]);
+	useEffect(() => {
+		console.log('+++searchFilter:', searchFilter);
+		//Backend Refetch
+		// getPropertiesRefetch({ input: searchFilter }).then();
+	}, [searchFilter]);
 
 	/** HANDLERS **/
 	const handlePaginationChange = async (event: ChangeEvent<unknown>, value: number) => {
@@ -56,6 +80,23 @@ const PropertyList: NextPage = ({ initialInput, ...props }: any) => {
 			},
 		);
 		setCurrentPage(value);
+	};
+
+	const likePropertyHandler = async (user: T, id: string) => {
+		try {
+			if (!id) return;
+			if (!user._id) throw new Error(Message.NOT_AUTHENTICATED);
+			//execute likeTargetProperty Mutation
+			await likeTargetProperty({ variables: { input: id } });
+
+			// execute getPropertiesRefetch
+			await getPropertiesRefetch({ input: initialInput });
+
+			await sweetTopSmallSuccessAlert('success', 800);
+		} catch (err: any) {
+			console.log('Error, on likeTargetProperty', err.message);
+			sweetMixinErrorAlert(err.message).then();
+		}
 	};
 
 	const sortingClickHandler = (e: MouseEvent<HTMLElement>) => {
@@ -140,7 +181,9 @@ const PropertyList: NextPage = ({ initialInput, ...props }: any) => {
 									</div>
 								) : (
 									properties.map((property: Property) => {
-										return <PropertyCard property={property} key={property?._id} />;
+										return (
+											<PropertyCard property={property} key={property?._id} likePropertyHandler={likePropertyHandler} />
+										);
 									})
 								)}
 							</Stack>
@@ -193,3 +236,16 @@ PropertyList.defaultProps = {
 };
 
 export default withLayoutBasic(PropertyList);
+
+/*
+router = comes from Next/router useRouter() hook orqali yasalgan.
+useRouter() ozi nima? useEffect dagi router qiymatlari ozgarsa useEffect() qayta ishga tushadi 
+yani componentDidMount boladi.
+
+router -> query paramsdagi qiymatlar ozgarsa router trigger beradi.yani useEffect() qayta ishga tushadi. va inputdagi qiymatlarni 
+togridan togri router orqali olishimiz mumkun.
+
+router.query -> query paramsni olib beradi
+
+
+ */

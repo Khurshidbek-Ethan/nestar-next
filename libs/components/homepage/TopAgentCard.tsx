@@ -16,7 +16,6 @@ const TopAgentCard = (props: TopAgentProps) => {
 		: '/img/profile/defaultUser.svg';
 
 	/** HANDLERS **/
-
 	if (device === 'mobile') {
 		return (
 			<Stack className="top-agent-card">

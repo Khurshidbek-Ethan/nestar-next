@@ -25,6 +25,7 @@ export interface Followers {
 }
 
 export interface Following {
+	getMemberFollowings: any;
 	_id: string;
 	followingId: string;
 	followerId: string;

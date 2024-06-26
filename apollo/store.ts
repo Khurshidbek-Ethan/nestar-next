@@ -23,3 +23,10 @@ export const userVar = makeVar<CustomJwtPayload>({
 	memberWarnings: 0,
 	memberBlocks: 0,
 });
+
+//@ts-ignore
+export const socketVar = makeVar<WebSocket>();
+
+// buni boshqacha yozsek ham boladi 
+// //@ts-ignore
+// export const socketVar = makeVar<WebSocket |null>(null);

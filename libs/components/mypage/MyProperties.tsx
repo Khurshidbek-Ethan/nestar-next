@@ -180,3 +180,27 @@ MyProperties.defaultProps = {
 };
 
 export default MyProperties;
+
+
+
+
+// <Stack className="ethan-card-box">
+// 				<Stack className="top">
+// 					<Link
+// 						href={{
+// 							pathname: '/property/detail',
+// 							query: { id: property?._id },
+// 						}}
+// 					>
+// 						<img src={imagePath} alt="" />
+// 					</Link>
+// 					{property && property?.propertyRank > topPropertyRank && (
+// 						<Box component={'div'} className={'top-badge'}>
+// 							<img src="/img/icons/electricity.svg" alt="" />
+// 							<Typography>TOP</Typography>
+// 						</Box>
+// 					)}
+// 					<Box component={'div'} className={'price-box'}>
+// 						<Typography>${formatterStr(property?.propertyPrice)}</Typography>
+// 					</Box>
+// 				</Stack>
